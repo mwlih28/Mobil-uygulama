@@ -1,0 +1,56 @@
+name: Android APK Build
+
+on:
+  push:
+    branches:
+      - main
+      - claude/mobile-test-analysis-groq-fjnl4x
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Kodu indir
+        uses: actions/checkout@v4
+
+      - name: Node.js 22 kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: JDK 17 kur
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Groq API Key'i ayarla
+        run: |
+          sed -i "s/BURAYA_GROQ_API_KEY_GIRIN/${{ secrets.GROQ_API_KEY }}/" src/constants/config.ts
+
+      - name: npm bağımlılıklarını yükle
+        run: npm install
+
+      - name: Gradle önbelleğini ayarla
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('android/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Debug APK oluştur
+        run: cd android && ./gradlew assembleDebug --no-daemon
+        env:
+          JAVA_OPTS: '-Xmx4g'
+
+      - name: APK'yı artifact olarak yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: TestAnaliz-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 30
