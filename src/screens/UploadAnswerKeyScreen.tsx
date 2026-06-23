@@ -6,21 +6,25 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
-  Platform,
 } from 'react-native';
-import DocumentPicker from 'react-native-document-picker';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { v4 as uuidv4 } from 'uuid';
 import type { UploadScreenProps } from '../navigation/types';
 import { fileToBase64, toImageDataUrl } from '../utils/fileToBase64';
-import { extractTextFromPdfBase64 } from '../utils/pdfExtract';
 import { extractFromImage } from '../api/extractFromImage';
-import { extractFromText } from '../api/extractFromText';
 import { answerKeyStorage } from '../storage/answerKeyStorage';
 import LoadingOverlay from '../components/LoadingOverlay';
-import type { AnswerKey, RawGroqAnswerKey, RawGroqResult, AnswerChoice } from '../types/models';
+import type {
+  AnswerKey,
+  RawGroqAnswerKey,
+  RawGroqResult,
+  AnswerChoice,
+} from '../types/models';
 
-export default function UploadAnswerKeyScreen({ navigation, route }: UploadScreenProps) {
+export default function UploadAnswerKeyScreen({
+  navigation,
+  route,
+}: UploadScreenProps) {
   const { bookId } = route.params;
   const [loading, setLoading] = useState(false);
   const [loadingMsg, setLoadingMsg] = useState('');
@@ -46,48 +50,14 @@ export default function UploadAnswerKeyScreen({ navigation, route }: UploadScree
     };
   }
 
-  function parseGroqResult(result: RawGroqResult, fileType: 'pdf' | 'image'): AnswerKey[] {
+  function parseGroqResult(result: RawGroqResult): AnswerKey[] {
     let raws: RawGroqAnswerKey[] = [];
     if (result.tests && Array.isArray(result.tests)) {
       raws = result.tests as RawGroqAnswerKey[];
     } else if (result.testName) {
       raws = [result as RawGroqAnswerKey];
     }
-    return raws.map(r => ({ ...rawToAnswerKey(r), sourceFileType: fileType }));
-  }
-
-  async function handlePickPDF() {
-    try {
-      const result = await DocumentPicker.pickSingle({
-        type: [DocumentPicker.types.pdf],
-      });
-      if (!result.uri) return;
-
-      setLoading(true);
-      setLoadingMsg('PDF okunuyor...');
-      const base64 = await fileToBase64(result.uri);
-
-      setLoadingMsg('Metin çıkarılıyor...');
-      const text = await extractTextFromPdfBase64(base64);
-
-      if (!text.trim()) {
-        Alert.alert('Hata', 'PDF\'den metin çıkarılamadı. Görüntü tabanlı PDF olabilir.');
-        setLoading(false);
-        return;
-      }
-
-      setLoadingMsg('Groq analiz ediyor...');
-      const groqResult = await extractFromText(text);
-      const keys = parseGroqResult(groqResult, 'pdf');
-
-      setPreview(keys);
-    } catch (err: unknown) {
-      if (!DocumentPicker.isCancel(err)) {
-        Alert.alert('Hata', 'PDF işlenirken bir hata oluştu. Tekrar deneyin.');
-      }
-    } finally {
-      setLoading(false);
-    }
+    return raws.map(r => rawToAnswerKey(r));
   }
 
   async function handlePickImage(source: 'camera' | 'gallery') {
@@ -103,12 +73,21 @@ export default function UploadAnswerKeyScreen({ navigation, route }: UploadScree
       const mimeType = asset.type || 'image/jpeg';
       const dataUrl = toImageDataUrl(base64, mimeType);
 
-      setLoadingMsg('Groq görüntüyü analiz ediyor...');
+      setLoadingMsg('Groq analiz ediyor...');
       const groqResult = await extractFromImage(dataUrl);
-      const keys = parseGroqResult(groqResult, 'image');
+      const keys = parseGroqResult(groqResult);
+
+      if (keys.length === 0) {
+        Alert.alert(
+          'Analiz Başarısız',
+          'Cevap anahtarı bulunamadı. Görüntünün net olduğundan emin olup tekrar deneyin.',
+        );
+        setLoading(false);
+        return;
+      }
 
       setPreview(keys);
-    } catch {
+    } catch (err) {
       Alert.alert('Hata', 'Görüntü işlenirken bir hata oluştu. Tekrar deneyin.');
     } finally {
       setLoading(false);
@@ -131,7 +110,7 @@ export default function UploadAnswerKeyScreen({ navigation, route }: UploadScree
   }
 
   function showImageOptions() {
-    Alert.alert('Görüntü Seç', '', [
+    Alert.alert('Görüntü Seç', 'Cevap anahtarını nasıl yüklemek istersiniz?', [
       { text: 'Kameradan Çek', onPress: () => handlePickImage('camera') },
       { text: 'Galeriden Seç', onPress: () => handlePickImage('gallery') },
       { text: 'İptal', style: 'cancel' },
@@ -146,28 +125,31 @@ export default function UploadAnswerKeyScreen({ navigation, route }: UploadScree
         <>
           <View style={styles.infoBox}>
             <Text style={styles.infoText}>
-              Cevap anahtarınızı PDF veya fotoğraf olarak yükleyin.{'\n'}
+              Cevap anahtarının fotoğrafını çekin veya galeriden seçin.{'\n'}
               Groq yapay zeka ile otomatik analiz edilecek.
             </Text>
           </View>
 
-          <TouchableOpacity style={styles.uploadBtn} onPress={handlePickPDF}>
-            <Text style={styles.uploadIcon}>📄</Text>
-            <Text style={styles.uploadTitle}>PDF Seç</Text>
-            <Text style={styles.uploadSub}>Cevap anahtarı PDF dosyasını seçin</Text>
-          </TouchableOpacity>
-
           <TouchableOpacity style={styles.uploadBtn} onPress={showImageOptions}>
             <Text style={styles.uploadIcon}>📸</Text>
-            <Text style={styles.uploadTitle}>Fotoğraf</Text>
-            <Text style={styles.uploadSub}>Kamera veya galeriden görüntü seçin</Text>
+            <Text style={styles.uploadTitle}>Cevap Anahtarı Yükle</Text>
+            <Text style={styles.uploadSub}>
+              Kamera veya galeriden görüntü seçin
+            </Text>
           </TouchableOpacity>
+
+          <View style={styles.tipBox}>
+            <Text style={styles.tipTitle}>💡 İpuçları</Text>
+            <Text style={styles.tipText}>• Görüntü net ve aydınlık olsun</Text>
+            <Text style={styles.tipText}>• Cevap anahtarı tam görünür olsun</Text>
+            <Text style={styles.tipText}>• Tek veya çoklu test desteklenir</Text>
+          </View>
         </>
       ) : (
         <>
           <View style={styles.previewHeader}>
             <Text style={styles.previewTitle}>
-              {preview.length} test bulundu
+              {preview.length} test bulundu ✓
             </Text>
             <TouchableOpacity onPress={() => setPreview(null)}>
               <Text style={styles.retryText}>← Tekrar Yükle</Text>
@@ -181,14 +163,16 @@ export default function UploadAnswerKeyScreen({ navigation, route }: UploadScree
                 Konu: {key.topic} • {key.totalQuestions} soru
               </Text>
               <View style={styles.sampleAnswers}>
-                {key.answers.slice(0, 8).map(a => (
+                {key.answers.slice(0, 10).map(a => (
                   <View key={a.questionNumber} style={styles.sampleItem}>
                     <Text style={styles.sampleQ}>{a.questionNumber}.</Text>
                     <Text style={styles.sampleA}>{a.correctAnswer}</Text>
                   </View>
                 ))}
-                {key.answers.length > 8 && (
-                  <Text style={styles.moreText}>+{key.answers.length - 8} daha</Text>
+                {key.answers.length > 10 && (
+                  <Text style={styles.moreText}>
+                    +{key.answers.length - 10} daha
+                  </Text>
                 )}
               </View>
             </View>
@@ -221,38 +205,45 @@ const styles = StyleSheet.create({
   uploadBtn: {
     backgroundColor: '#ffffff',
     borderRadius: 14,
-    padding: 24,
+    padding: 32,
     alignItems: 'center',
-    marginBottom: 14,
-    elevation: 2,
+    marginBottom: 16,
+    elevation: 3,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
   },
-  uploadIcon: { fontSize: 40, marginBottom: 10 },
+  uploadIcon: { fontSize: 52, marginBottom: 12 },
   uploadTitle: {
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: '700',
     color: '#1a1a2e',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   uploadSub: { fontSize: 13, color: '#888', textAlign: 'center' },
+  tipBox: {
+    backgroundColor: '#fff9e6',
+    borderRadius: 10,
+    padding: 14,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F39C12',
+  },
+  tipTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#E67E22',
+    marginBottom: 8,
+  },
+  tipText: { fontSize: 13, color: '#666', marginBottom: 4, lineHeight: 18 },
   previewHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
   },
-  previewTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: '#1a1a2e',
-  },
-  retryText: {
-    color: '#3498DB',
-    fontSize: 14,
-  },
+  previewTitle: { fontSize: 17, fontWeight: '700', color: '#27ae60' },
+  retryText: { color: '#3498DB', fontSize: 14 },
   previewCard: {
     backgroundColor: '#ffffff',
     borderRadius: 12,
@@ -270,11 +261,7 @@ const styles = StyleSheet.create({
     color: '#1a1a2e',
     marginBottom: 6,
   },
-  previewMeta: {
-    fontSize: 13,
-    color: '#666',
-    marginBottom: 12,
-  },
+  previewMeta: { fontSize: 13, color: '#666', marginBottom: 12 },
   sampleAnswers: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -298,10 +285,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     alignItems: 'center',
     marginTop: 8,
+    elevation: 3,
   },
-  saveBtnText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+  saveBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
 });

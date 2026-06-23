@@ -1,13 +1,5 @@
 const { getDefaultConfig, mergeConfig } = require('@react-native/metro-config');
 
-const defaultConfig = getDefaultConfig(__dirname);
+const config = {};
 
-const config = {
-  resolver: {
-    extraNodeModules: {
-      buffer: require.resolve('buffer'),
-    },
-  },
-};
-
-module.exports = mergeConfig(defaultConfig, config);
+module.exports = mergeConfig(getDefaultConfig(__dirname), config);
