@@ -38,13 +38,16 @@ export default function UploadAnswerKeyScreen({
       topic: raw.topic || 'Genel',
       testNumber: raw.testNumber || 1,
       totalQuestions: raw.answers?.length || 0,
-      answers: (raw.answers || []).map(a => ({
-        questionNumber: a.questionNumber,
-        correctAnswer: (['A', 'B', 'C', 'D', 'E'].includes(a.correctAnswer)
-          ? a.correctAnswer
-          : null) as AnswerChoice,
-        topic: raw.topic || 'Genel',
-      })),
+      answers: (raw.answers || []).map(a => {
+        const upper = (a.correctAnswer ?? '').toUpperCase().trim();
+        return {
+          questionNumber: a.questionNumber,
+          correctAnswer: (['A', 'B', 'C', 'D', 'E'].includes(upper)
+            ? upper
+            : null) as AnswerChoice,
+          topic: raw.topic || 'Genel',
+        };
+      }),
       sourceFileType: 'image',
       createdAt: new Date().toISOString(),
     };
@@ -102,7 +105,21 @@ export default function UploadAnswerKeyScreen({
       for (const key of preview) {
         await answerKeyStorage.save(key);
       }
-      navigation.goBack();
+      setLoading(false);
+      Alert.alert(
+        'Kaydedildi ✓',
+        `${preview.length} test başarıyla eklendi.`,
+        [
+          {
+            text: 'Başka Test Ekle',
+            onPress: () => setPreview(null),
+          },
+          {
+            text: 'Kitaba Dön',
+            onPress: () => navigation.goBack(),
+          },
+        ],
+      );
     } catch {
       Alert.alert('Hata', 'Kaydedilirken hata oluştu.');
       setLoading(false);
