@@ -7,7 +7,7 @@ import {
   Alert,
   Animated,
 } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/generateId';
 import type { AnswerEntryScreenProps } from '../navigation/types';
 import { answerKeyStorage } from '../storage/answerKeyStorage';
 import { sessionStorage } from '../storage/sessionStorage';
@@ -22,7 +22,7 @@ export default function AnswerEntryScreen({ navigation, route }: AnswerEntryScre
   const [answerKey, setAnswerKey] = useState<AnswerKey | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userAnswers, setUserAnswers] = useState<Map<number, AnswerChoice>>(new Map());
-  const sessionId = useRef(uuidv4());
+  const sessionId = useRef(generateId());
   const progressAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {

@@ -8,7 +8,7 @@ import {
   ScrollView,
   Alert,
 } from 'react-native';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/generateId';
 import type { AddBookScreenProps } from '../navigation/types';
 import { bookStorage } from '../storage/bookStorage';
 import { BOOK_COLORS } from '../constants/storageKeys';
@@ -28,7 +28,7 @@ export default function AddBookScreen({ navigation }: AddBookScreenProps) {
     setSaving(true);
     try {
       await bookStorage.save({
-        id: uuidv4(),
+        id: generateId(),
         name: name.trim(),
         publisher: publisher.trim() || undefined,
         createdAt: new Date().toISOString(),

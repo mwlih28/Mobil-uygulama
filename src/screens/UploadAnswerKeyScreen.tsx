@@ -8,7 +8,7 @@ import {
   Alert,
 } from 'react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
-import { v4 as uuidv4 } from 'uuid';
+import { generateId } from '../utils/generateId';
 import type { UploadScreenProps } from '../navigation/types';
 import { fileToBase64, toImageDataUrl } from '../utils/fileToBase64';
 import { extractFromImage } from '../api/extractFromImage';
@@ -32,7 +32,7 @@ export default function UploadAnswerKeyScreen({
 
   function rawToAnswerKey(raw: RawGroqAnswerKey): AnswerKey {
     return {
-      id: uuidv4(),
+      id: generateId(),
       bookId,
       testName: raw.testName || 'Test',
       topic: raw.topic || 'Genel',
