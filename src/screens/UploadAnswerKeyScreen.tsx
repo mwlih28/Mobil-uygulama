@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { launchImageLibrary, launchCamera } from 'react-native-image-picker';
 import { generateId } from '../utils/generateId';
@@ -90,7 +91,7 @@ export default function UploadAnswerKeyScreen({
       }
 
       setPreview(keys);
-    } catch (err) {
+    } catch {
       Alert.alert('Hata', 'Görüntü işlenirken bir hata oluştu. Tekrar deneyin.');
     } finally {
       setLoading(false);
@@ -107,17 +108,11 @@ export default function UploadAnswerKeyScreen({
       }
       setLoading(false);
       Alert.alert(
-        'Kaydedildi ✓',
+        'Kaydedildi',
         `${preview.length} test başarıyla eklendi.`,
         [
-          {
-            text: 'Başka Test Ekle',
-            onPress: () => setPreview(null),
-          },
-          {
-            text: 'Kitaba Dön',
-            onPress: () => navigation.goBack(),
-          },
+          { text: 'Başka Test Ekle', onPress: () => setPreview(null) },
+          { text: 'Kitaba Dön', onPress: () => navigation.goBack() },
         ],
       );
     } catch {
@@ -135,174 +130,261 @@ export default function UploadAnswerKeyScreen({
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <View style={styles.wrapper}>
+      <StatusBar barStyle="light-content" backgroundColor="#0d1b2a" />
       <LoadingOverlay visible={loading} message={loadingMsg} />
+      <ScrollView contentContainerStyle={styles.content}>
 
-      {!preview ? (
-        <>
-          <View style={styles.infoBox}>
-            <Text style={styles.infoText}>
-              Cevap anahtarının fotoğrafını çekin veya galeriden seçin.{'\n'}
-              Groq yapay zeka ile otomatik analiz edilecek.
-            </Text>
-          </View>
-
-          <TouchableOpacity style={styles.uploadBtn} onPress={showImageOptions}>
-            <Text style={styles.uploadIcon}>📸</Text>
-            <Text style={styles.uploadTitle}>Cevap Anahtarı Yükle</Text>
-            <Text style={styles.uploadSub}>
-              Kamera veya galeriden görüntü seçin
-            </Text>
-          </TouchableOpacity>
-
-          <View style={styles.tipBox}>
-            <Text style={styles.tipTitle}>💡 İpuçları</Text>
-            <Text style={styles.tipText}>• Görüntü net ve aydınlık olsun</Text>
-            <Text style={styles.tipText}>• Cevap anahtarı tam görünür olsun</Text>
-            <Text style={styles.tipText}>• Tek veya çoklu test desteklenir</Text>
-          </View>
-        </>
-      ) : (
-        <>
-          <View style={styles.previewHeader}>
-            <Text style={styles.previewTitle}>
-              {preview.length} test bulundu ✓
-            </Text>
-            <TouchableOpacity onPress={() => setPreview(null)}>
-              <Text style={styles.retryText}>← Tekrar Yükle</Text>
-            </TouchableOpacity>
-          </View>
-
-          {preview.map((key, idx) => (
-            <View key={idx} style={styles.previewCard}>
-              <Text style={styles.previewTestName}>{key.testName}</Text>
-              <Text style={styles.previewMeta}>
-                Konu: {key.topic} • {key.totalQuestions} soru
+        {!preview ? (
+          <>
+            {/* Upload card */}
+            <TouchableOpacity
+              style={styles.uploadCard}
+              onPress={showImageOptions}
+              activeOpacity={0.88}>
+              <View style={styles.uploadIconWrap}>
+                <Text style={styles.uploadEmoji}>📸</Text>
+              </View>
+              <Text style={styles.uploadTitle}>Cevap Anahtarı Yükle</Text>
+              <Text style={styles.uploadSub}>
+                Kamera veya galeriden fotoğraf çek,{'\n'}yapay zeka otomatik analiz eder
               </Text>
-              <View style={styles.sampleAnswers}>
-                {key.answers.slice(0, 10).map(a => (
-                  <View key={a.questionNumber} style={styles.sampleItem}>
-                    <Text style={styles.sampleQ}>{a.questionNumber}.</Text>
-                    <Text style={styles.sampleA}>{a.correctAnswer}</Text>
-                  </View>
-                ))}
-                {key.answers.length > 10 && (
-                  <Text style={styles.moreText}>
-                    +{key.answers.length - 10} daha
-                  </Text>
-                )}
+              <View style={styles.uploadPill}>
+                <Text style={styles.uploadPillText}>Fotoğraf Seç</Text>
+              </View>
+            </TouchableOpacity>
+
+            {/* Action buttons */}
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => handlePickImage('camera')}
+                activeOpacity={0.8}>
+                <Text style={styles.actionIcon}>📷</Text>
+                <Text style={styles.actionLabel}>Kamera</Text>
+              </TouchableOpacity>
+              <View style={styles.actionDivider} />
+              <TouchableOpacity
+                style={styles.actionBtn}
+                onPress={() => handlePickImage('gallery')}
+                activeOpacity={0.8}>
+                <Text style={styles.actionIcon}>🖼️</Text>
+                <Text style={styles.actionLabel}>Galeri</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Tips */}
+            <View style={styles.tipCard}>
+              <View style={styles.tipHeader}>
+                <View style={styles.tipDot} />
+                <Text style={styles.tipTitle}>İpuçları</Text>
+              </View>
+              <View style={styles.tipList}>
+                <Text style={styles.tipItem}>Görüntü net ve aydınlık olsun</Text>
+                <Text style={styles.tipItem}>Cevap anahtarı tam görünür olsun</Text>
+                <Text style={styles.tipItem}>Tek veya çoklu test desteklenir</Text>
               </View>
             </View>
-          ))}
+          </>
+        ) : (
+          <>
+            {/* Preview header */}
+            <View style={styles.previewHeaderRow}>
+              <View style={styles.successBadge}>
+                <Text style={styles.successBadgeText}>{preview.length} test bulundu</Text>
+              </View>
+              <TouchableOpacity onPress={() => setPreview(null)} style={styles.retryBtn}>
+                <Text style={styles.retryText}>Tekrar Yükle</Text>
+              </TouchableOpacity>
+            </View>
 
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-            <Text style={styles.saveBtnText}>Kaydet ve Ekle</Text>
-          </TouchableOpacity>
-        </>
-      )}
-    </ScrollView>
+            {/* Preview cards */}
+            {preview.map((key, idx) => (
+              <View key={idx} style={styles.previewCard}>
+                <View style={styles.previewCardTop}>
+                  <View style={styles.previewNumBadge}>
+                    <Text style={styles.previewNumText}>{key.testNumber}</Text>
+                  </View>
+                  <View style={styles.previewCardInfo}>
+                    <Text style={styles.previewTestName} numberOfLines={2}>{key.testName}</Text>
+                    <Text style={styles.previewMeta}>{key.topic}  ·  {key.totalQuestions} soru</Text>
+                  </View>
+                </View>
+
+                <View style={styles.answerGrid}>
+                  {key.answers.slice(0, 12).map(a => (
+                    <View key={a.questionNumber} style={styles.answerChip}>
+                      <Text style={styles.answerChipQ}>{a.questionNumber}</Text>
+                      <Text style={styles.answerChipA}>{a.correctAnswer ?? '?'}</Text>
+                    </View>
+                  ))}
+                  {key.answers.length > 12 && (
+                    <View style={[styles.answerChip, styles.answerChipMore]}>
+                      <Text style={styles.moreText}>+{key.answers.length - 12}</Text>
+                    </View>
+                  )}
+                </View>
+              </View>
+            ))}
+
+            {/* Save button */}
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSave} activeOpacity={0.85}>
+              <Text style={styles.saveBtnText}>Kaydet ve Ekle</Text>
+            </TouchableOpacity>
+          </>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  content: { padding: 16, paddingBottom: 40 },
-  infoBox: {
-    backgroundColor: '#EAF4FD',
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 20,
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#2980B9',
-    lineHeight: 20,
-    textAlign: 'center',
-  },
-  uploadBtn: {
-    backgroundColor: '#ffffff',
-    borderRadius: 14,
+  wrapper: { flex: 1, backgroundColor: '#f5f7fa' },
+  content: { padding: 20, paddingBottom: 48 },
+
+  uploadCard: {
+    backgroundColor: '#0d1b2a',
+    borderRadius: 24,
     padding: 32,
     alignItems: 'center',
     marginBottom: 16,
-    elevation: 3,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
+    elevation: 6,
+    shadowColor: '#0d1b2a',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
   },
-  uploadIcon: { fontSize: 52, marginBottom: 12 },
-  uploadTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a2e',
-    marginBottom: 6,
-  },
-  uploadSub: { fontSize: 13, color: '#888', textAlign: 'center' },
-  tipBox: {
-    backgroundColor: '#fff9e6',
-    borderRadius: 10,
-    padding: 14,
-    borderLeftWidth: 4,
-    borderLeftColor: '#F39C12',
-  },
-  tipTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#E67E22',
-    marginBottom: 8,
-  },
-  tipText: { fontSize: 13, color: '#666', marginBottom: 4, lineHeight: 18 },
-  previewHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  uploadIconWrap: {
+    width: 80,
+    height: 80,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.08)',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 20,
   },
-  previewTitle: { fontSize: 17, fontWeight: '700', color: '#27ae60' },
-  retryText: { color: '#3498DB', fontSize: 14 },
+  uploadEmoji: { fontSize: 38 },
+  uploadTitle: { fontSize: 20, fontWeight: '800', color: '#fff', marginBottom: 8, textAlign: 'center' },
+  uploadSub: { fontSize: 14, color: 'rgba(255,255,255,0.45)', textAlign: 'center', lineHeight: 20, marginBottom: 24 },
+  uploadPill: {
+    backgroundColor: '#4361ee',
+    borderRadius: 20,
+    paddingHorizontal: 28,
+    paddingVertical: 12,
+    elevation: 4,
+    shadowColor: '#4361ee',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+  },
+  uploadPillText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+
+  actionRow: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    marginBottom: 16,
+    elevation: 1,
+    shadowColor: '#0d1b2a',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    overflow: 'hidden',
+  },
+  actionBtn: { flex: 1, alignItems: 'center', paddingVertical: 18 },
+  actionDivider: { width: 1, backgroundColor: '#f0f2f5', marginVertical: 12 },
+  actionIcon: { fontSize: 26, marginBottom: 6 },
+  actionLabel: { fontSize: 12, fontWeight: '600', color: '#4a5568' },
+
+  tipCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+    elevation: 1,
+    shadowColor: '#0d1b2a',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+  },
+  tipHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
+  tipDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#fb8500' },
+  tipTitle: { fontSize: 13, fontWeight: '700', color: '#4a5568', textTransform: 'uppercase', letterSpacing: 0.6 },
+  tipList: { gap: 8 },
+  tipItem: { fontSize: 14, color: '#718096', lineHeight: 20, paddingLeft: 4 },
+
+  previewHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  successBadge: {
+    backgroundColor: '#06d6a0',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+  },
+  successBadgeText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  retryBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+  },
+  retryText: { fontSize: 13, color: '#4a5568', fontWeight: '600' },
+
   previewCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderRadius: 18,
     padding: 16,
     marginBottom: 12,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
+    shadowColor: '#0d1b2a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
-  previewTestName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#1a1a2e',
-    marginBottom: 6,
-  },
-  previewMeta: { fontSize: 13, color: '#666', marginBottom: 12 },
-  sampleAnswers: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    alignItems: 'center',
-  },
-  sampleItem: {
-    flexDirection: 'row',
-    backgroundColor: '#f5f5f5',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    gap: 4,
-  },
-  sampleQ: { fontSize: 12, color: '#888' },
-  sampleA: { fontSize: 12, fontWeight: '700', color: '#1a1a2e' },
-  moreText: { fontSize: 12, color: '#888', fontStyle: 'italic' },
-  saveBtn: {
-    backgroundColor: '#2ECC71',
+  previewCardTop: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, marginBottom: 14 },
+  previewNumBadge: {
+    width: 44,
+    height: 44,
     borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: '#eef1fb',
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  },
+  previewNumText: { fontSize: 18, fontWeight: '800', color: '#4361ee' },
+  previewCardInfo: { flex: 1 },
+  previewTestName: { fontSize: 15, fontWeight: '700', color: '#0d1b2a', marginBottom: 4 },
+  previewMeta: { fontSize: 13, color: '#9aa5b4' },
+
+  answerGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  answerChip: {
+    backgroundColor: '#f5f7fa',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    alignItems: 'center',
+    minWidth: 38,
+  },
+  answerChipMore: { backgroundColor: '#eef1fb' },
+  answerChipQ: { fontSize: 9, color: '#aaa', marginBottom: 1 },
+  answerChipA: { fontSize: 13, fontWeight: '800', color: '#0d1b2a' },
+  moreText: { fontSize: 12, fontWeight: '700', color: '#4361ee' },
+
+  saveBtn: {
+    backgroundColor: '#4361ee',
+    borderRadius: 18,
+    paddingVertical: 18,
     alignItems: 'center',
     marginTop: 8,
-    elevation: 3,
+    elevation: 6,
+    shadowColor: '#4361ee',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
   },
-  saveBtnText: { color: '#ffffff', fontSize: 16, fontWeight: '700' },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.3 },
 });

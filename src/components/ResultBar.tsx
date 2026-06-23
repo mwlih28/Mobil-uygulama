@@ -13,34 +13,40 @@ export default function ResultBar({ result }: Props) {
   const wrongFraction = result.totalInTopic > 0
     ? result.wrongInTopic / result.totalInTopic
     : 0;
+  const pct = result.percentage;
+  const pctColor = pct >= 70 ? '#06d6a0' : pct >= 45 ? '#fb8500' : '#f72585';
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.topic} numberOfLines={1}>{result.topic}</Text>
-        <Text style={styles.percentage}>{result.percentage}%</Text>
+        <Text style={[styles.percentage, { color: pctColor }]}>{pct}%</Text>
       </View>
       <View style={styles.track}>
-        <View style={[styles.fill, styles.correct, { flex: correctFraction }]} />
-        <View style={[styles.fill, styles.wrong, { flex: wrongFraction }]} />
-        <View style={[styles.fill, styles.empty, { flex: 1 - correctFraction - wrongFraction }]} />
+        {correctFraction > 0 && (
+          <View style={[styles.fill, styles.correct, { flex: correctFraction }]} />
+        )}
+        {wrongFraction > 0 && (
+          <View style={[styles.fill, styles.wrong, { flex: wrongFraction }]} />
+        )}
+        {(1 - correctFraction - wrongFraction) > 0 && (
+          <View style={[styles.fill, styles.empty, { flex: 1 - correctFraction - wrongFraction }]} />
+        )}
       </View>
-      <View style={styles.legend}>
-        <Text style={styles.legendItem}>
-          <Text style={styles.dot}>● </Text>
-          <Text style={styles.correctText}>D: {result.correctInTopic}</Text>
-        </Text>
-        <Text style={styles.legendItem}>
-          <Text style={styles.dot}>● </Text>
-          <Text style={styles.wrongText}>Y: {result.wrongInTopic}</Text>
-        </Text>
-        <Text style={styles.legendItem}>
-          <Text style={styles.dot}>● </Text>
-          <Text style={styles.emptyText}>B: {result.emptyInTopic}</Text>
-        </Text>
-        <Text style={styles.legendItem}>
-          <Text style={styles.totalText}>/{result.totalInTopic}</Text>
-        </Text>
+      <View style={styles.stats}>
+        <View style={styles.statChip}>
+          <View style={[styles.dot, { backgroundColor: '#06d6a0' }]} />
+          <Text style={styles.statText}>{result.correctInTopic} D</Text>
+        </View>
+        <View style={styles.statChip}>
+          <View style={[styles.dot, { backgroundColor: '#f72585' }]} />
+          <Text style={styles.statText}>{result.wrongInTopic} Y</Text>
+        </View>
+        <View style={styles.statChip}>
+          <View style={[styles.dot, { backgroundColor: '#cbd5e0' }]} />
+          <Text style={styles.statText}>{result.emptyInTopic} B</Text>
+        </View>
+        <Text style={styles.total}>/{result.totalInTopic}</Text>
       </View>
     </View>
   );
@@ -48,61 +54,61 @@ export default function ResultBar({ result }: Props) {
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    padding: 14,
     marginHorizontal: 16,
     marginVertical: 4,
     elevation: 1,
-    shadowColor: '#000',
+    shadowColor: '#0d1b2a',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.06,
-    shadowRadius: 2,
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    alignItems: 'center',
+    marginBottom: 10,
   },
   topic: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#1a1a2e',
+    color: '#0d1b2a',
     flex: 1,
   },
   percentage: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: '#1a1a2e',
+    fontSize: 15,
+    fontWeight: '800',
     marginLeft: 8,
   },
   track: {
-    height: 10,
-    borderRadius: 5,
+    height: 8,
+    borderRadius: 4,
     overflow: 'hidden',
     flexDirection: 'row',
-    backgroundColor: '#eee',
+    backgroundColor: '#f0f2f5',
+    marginBottom: 10,
   },
-  fill: {
-    height: '100%',
-  },
-  correct: { backgroundColor: '#2ECC71' },
-  wrong: { backgroundColor: '#E74C3C' },
-  empty: { backgroundColor: '#ddd' },
-  legend: {
+  fill: { height: '100%' },
+  correct: { backgroundColor: '#06d6a0' },
+  wrong: { backgroundColor: '#f72585' },
+  empty: { backgroundColor: '#e2e8f0' },
+  stats: {
     flexDirection: 'row',
-    marginTop: 6,
-    gap: 12,
+    alignItems: 'center',
+    gap: 8,
   },
-  legendItem: {
-    fontSize: 12,
-    color: '#555',
+  statChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
   },
   dot: {
-    fontSize: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
   },
-  correctText: { color: '#27ae60' },
-  wrongText: { color: '#c0392b' },
-  emptyText: { color: '#888' },
-  totalText: { color: '#888' },
+  statText: { fontSize: 12, color: '#4a5568', fontWeight: '600' },
+  total: { fontSize: 12, color: '#9aa5b4', marginLeft: 4 },
 });

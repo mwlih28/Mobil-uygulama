@@ -7,9 +7,10 @@ import {
   StyleSheet,
   ScrollView,
   Alert,
+  StatusBar,
 } from 'react-native';
-import { generateId } from '../utils/generateId';
 import type { AddBookScreenProps } from '../navigation/types';
+import { generateId } from '../utils/generateId';
 import { bookStorage } from '../storage/bookStorage';
 import { BOOK_COLORS } from '../constants/storageKeys';
 
@@ -21,10 +22,9 @@ export default function AddBookScreen({ navigation }: AddBookScreenProps) {
 
   async function handleSave() {
     if (!name.trim()) {
-      Alert.alert('Hata', 'Kitap adı zorunludur.');
+      Alert.alert('Eksik Alan', 'Kitap adını girmeden devam edemezsin.');
       return;
     }
-
     setSaving(true);
     try {
       await bookStorage.save({
@@ -36,111 +36,167 @@ export default function AddBookScreen({ navigation }: AddBookScreenProps) {
       });
       navigation.goBack();
     } catch {
-      Alert.alert('Hata', 'Kitap kaydedilirken bir hata oluştu.');
+      Alert.alert('Hata', 'Kitap kaydedilirken bir sorun oluştu.');
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <ScrollView style={styles.container} keyboardShouldPersistTaps="handled">
-      <View style={styles.form}>
-        <Text style={styles.label}>Kitap Adı *</Text>
-        <TextInput
-          style={styles.input}
-          value={name}
-          onChangeText={setName}
-          placeholder="Örn: Matematik Soru Bankası 2024"
-          placeholderTextColor="#aaa"
-          maxLength={100}
-        />
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0d1b2a" />
+      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
 
-        <Text style={styles.label}>Yayınevi (opsiyonel)</Text>
-        <TextInput
-          style={styles.input}
-          value={publisher}
-          onChangeText={setPublisher}
-          placeholder="Örn: Hız Yayınları"
-          placeholderTextColor="#aaa"
-          maxLength={60}
-        />
+        {/* Preview card */}
+        <View style={styles.previewSection}>
+          <Text style={styles.previewLabel}>Önizleme</Text>
+          <View style={styles.previewCard}>
+            <View style={[styles.previewAccent, { backgroundColor: selectedColor }]}>
+              <Text style={styles.previewInitial}>
+                {name.trim() ? name.trim().charAt(0).toUpperCase() : '?'}
+              </Text>
+            </View>
+            <View style={styles.previewInfo}>
+              <Text style={styles.previewName} numberOfLines={1}>
+                {name.trim() || 'Kitap adı...'}
+              </Text>
+              <Text style={styles.previewPub} numberOfLines={1}>
+                {publisher.trim() || 'Yayınevi...'}
+              </Text>
+            </View>
+          </View>
+        </View>
 
-        <Text style={styles.label}>Renk</Text>
-        <View style={styles.colorRow}>
-          {BOOK_COLORS.map(color => (
-            <TouchableOpacity
-              key={color}
-              style={[
-                styles.colorSwatch,
-                { backgroundColor: color },
-                selectedColor === color && styles.selectedSwatch,
-              ]}
-              onPress={() => setSelectedColor(color)}
-            />
-          ))}
+        {/* Form */}
+        <View style={styles.form}>
+          <Text style={styles.label}>Kitap Adı *</Text>
+          <TextInput
+            style={styles.input}
+            value={name}
+            onChangeText={setName}
+            placeholder="Örn: Trigonometri Soru Bankası"
+            placeholderTextColor="#b0bac5"
+            maxLength={100}
+          />
+
+          <Text style={styles.label}>Yayınevi</Text>
+          <TextInput
+            style={styles.input}
+            value={publisher}
+            onChangeText={setPublisher}
+            placeholder="Örn: Hız Yayınları"
+            placeholderTextColor="#b0bac5"
+            maxLength={60}
+          />
+
+          <Text style={styles.label}>Renk Seç</Text>
+          <View style={styles.colorGrid}>
+            {BOOK_COLORS.map(color => (
+              <TouchableOpacity
+                key={color}
+                style={[
+                  styles.swatch,
+                  { backgroundColor: color },
+                  selectedColor === color && styles.swatchSelected,
+                ]}
+                onPress={() => setSelectedColor(color)}>
+                {selectedColor === color && (
+                  <Text style={styles.swatchCheck}>✓</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
 
         <TouchableOpacity
           style={[styles.saveBtn, saving && styles.saveBtnDisabled]}
           onPress={handleSave}
-          disabled={saving}>
+          disabled={saving}
+          activeOpacity={0.85}>
           <Text style={styles.saveBtnText}>
             {saving ? 'Kaydediliyor...' : 'Kitabı Kaydet'}
           </Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  form: { padding: 20 },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#444',
-    marginBottom: 8,
-    marginTop: 16,
-  },
-  input: {
-    backgroundColor: '#ffffff',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    fontSize: 15,
-    color: '#1a1a2e',
-  },
-  colorRow: {
+  container: { flex: 1, backgroundColor: '#f5f7fa' },
+  scroll: { padding: 20, paddingBottom: 40 },
+  previewSection: { marginBottom: 24 },
+  previewLabel: { fontSize: 12, fontWeight: '600', color: '#9aa5b4', marginBottom: 10, textTransform: 'uppercase', letterSpacing: 0.8 },
+  previewCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 16,
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginTop: 4,
-  },
-  colorSwatch: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-  },
-  selectedSwatch: {
-    borderWidth: 3,
-    borderColor: '#1a1a2e',
-  },
-  saveBtn: {
-    backgroundColor: '#1a1a2e',
-    borderRadius: 12,
-    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 32,
+    elevation: 3,
+    shadowColor: '#0d1b2a',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
   },
-  saveBtnDisabled: {
-    opacity: 0.6,
+  previewAccent: {
+    width: 54,
+    height: 54,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
   },
-  saveBtnText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '700',
+  previewInitial: { fontSize: 24, fontWeight: '800', color: '#fff' },
+  previewInfo: { flex: 1 },
+  previewName: { fontSize: 16, fontWeight: '700', color: '#0d1b2a', marginBottom: 4 },
+  previewPub: { fontSize: 13, color: '#9aa5b4' },
+  form: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+    elevation: 2,
+    shadowColor: '#0d1b2a',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
+  label: { fontSize: 13, fontWeight: '600', color: '#4a5568', marginBottom: 8, marginTop: 16 },
+  input: {
+    backgroundColor: '#f5f7fa',
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#e2e8f0',
+    paddingHorizontal: 14,
+    paddingVertical: 13,
+    fontSize: 15,
+    color: '#0d1b2a',
+  },
+  colorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 12, marginTop: 4 },
+  swatch: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  swatchSelected: {
+    borderWidth: 3,
+    borderColor: '#0d1b2a',
+  },
+  swatchCheck: { fontSize: 18, color: '#fff', fontWeight: '800' },
+  saveBtn: {
+    backgroundColor: '#4361ee',
+    borderRadius: 16,
+    paddingVertical: 17,
+    alignItems: 'center',
+    elevation: 6,
+    shadowColor: '#4361ee',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
+  },
+  saveBtnDisabled: { opacity: 0.6 },
+  saveBtnText: { color: '#fff', fontSize: 16, fontWeight: '700', letterSpacing: 0.3 },
 });

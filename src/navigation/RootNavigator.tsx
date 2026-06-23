@@ -15,15 +15,16 @@ export default function RootNavigator() {
     <Stack.Navigator
       initialRouteName="Home"
       screenOptions={{
-        headerStyle: { backgroundColor: '#1a1a2e' },
+        headerStyle: { backgroundColor: '#0d1b2a' },
         headerTintColor: '#ffffff',
-        headerTitleStyle: { fontWeight: 'bold' },
-        contentStyle: { backgroundColor: '#f0f2f5' },
+        headerTitleStyle: { fontWeight: '700', fontSize: 16 },
+        headerShadowVisible: false,
+        contentStyle: { backgroundColor: '#f5f7fa' },
       }}>
       <Stack.Screen
         name="Home"
         component={HomeScreen}
-        options={{ title: 'Kitaplarım' }}
+        options={{ headerShown: false }}
       />
       <Stack.Screen
         name="AddBook"
@@ -43,12 +44,12 @@ export default function RootNavigator() {
       <Stack.Screen
         name="AnswerEntry"
         component={AnswerEntryScreen}
-        options={{ title: 'Cevaplarını Gir', gestureEnabled: false }}
+        options={{ headerShown: false, gestureEnabled: false }}
       />
       <Stack.Screen
         name="Result"
         component={ResultScreen}
-        options={{ title: 'Sonuçlar', headerBackVisible: false }}
+        options={{ headerShown: false, headerBackVisible: false }}
       />
     </Stack.Navigator>
   );

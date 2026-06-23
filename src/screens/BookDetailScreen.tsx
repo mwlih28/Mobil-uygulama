@@ -6,16 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import type { BookDetailScreenProps } from '../navigation/types';
 import { useAnswerKeys } from '../hooks/useAnswerKeys';
 import TestCard from '../components/TestCard';
 import type { AnswerKey } from '../types/models';
 
-interface Section {
-  title: string;
-  data: AnswerKey[];
-}
+interface Section { title: string; data: AnswerKey[] }
 
 export default function BookDetailScreen({ navigation, route }: BookDetailScreenProps) {
   const { bookId } = route.params;
@@ -32,7 +30,7 @@ export default function BookDetailScreen({ navigation, route }: BookDetailScreen
         <TouchableOpacity
           onPress={() => navigation.navigate('UploadAnswerKey', { bookId })}
           style={styles.headerBtn}>
-          <Text style={styles.headerBtnText}>+ Test Ekle</Text>
+          <Text style={styles.headerBtnText}>+ Test</Text>
         </TouchableOpacity>
       ),
     });
@@ -44,50 +42,58 @@ export default function BookDetailScreen({ navigation, route }: BookDetailScreen
     if (!topicMap.has(ak.topic)) topicMap.set(ak.topic, []);
     topicMap.get(ak.topic)!.push(ak);
   });
-  topicMap.forEach((keys, topic) => {
-    sections.push({ title: topic, data: keys });
-  });
+  topicMap.forEach((keys, topic) => sections.push({ title: topic, data: keys }));
 
   if (loading) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#1a1a2e" />
+        <ActivityIndicator size="large" color="#4361ee" />
       </View>
     );
   }
 
   return (
     <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="#0d1b2a" />
+
+      {answerKeys.length > 0 && (
+        <View style={styles.summaryBar}>
+          <Text style={styles.summaryText}>
+            {answerKeys.length} test  ·  {[...topicMap.keys()].length} konu
+          </Text>
+        </View>
+      )}
+
       <SectionList
         sections={sections}
         keyExtractor={item => item.id}
         renderItem={({ item }) => (
           <TestCard
             answerKey={item}
-            onStart={() =>
-              navigation.navigate('AnswerEntry', {
-                answerKeyId: item.id,
-                bookId,
-              })
-            }
+            onStart={() => navigation.navigate('AnswerEntry', { answerKeyId: item.id, bookId })}
             onDelete={() => removeKey(item.id)}
           />
         )}
         renderSectionHeader={({ section }) => (
           <View style={styles.sectionHeader}>
+            <View style={styles.sectionDot} />
             <Text style={styles.sectionTitle}>{section.title}</Text>
+            <Text style={styles.sectionCount}>{section.data.length}</Text>
           </View>
         )}
-        contentContainerStyle={
-          answerKeys.length === 0 ? styles.emptyContainer : styles.listContent
-        }
+        contentContainerStyle={answerKeys.length === 0 ? styles.emptyWrap : styles.list}
         ListEmptyComponent={
           <View style={styles.empty}>
-            <Text style={styles.emptyIcon}>📋</Text>
-            <Text style={styles.emptyTitle}>Test bulunamadı</Text>
-            <Text style={styles.emptySubtitle}>
-              Sağ üstten cevap anahtarı yükleyerek test ekleyin
+            <View style={styles.emptyIcon}><Text style={styles.emptyEmoji}>📋</Text></View>
+            <Text style={styles.emptyTitle}>Test eklenmemiş</Text>
+            <Text style={styles.emptySub}>
+              Sağ üstteki "+ Test" butonuna basarak{'\n'}cevap anahtarı yükle
             </Text>
+            <TouchableOpacity
+              style={styles.emptyBtn}
+              onPress={() => navigation.navigate('UploadAnswerKey', { bookId })}>
+              <Text style={styles.emptyBtnText}>Cevap Anahtarı Yükle</Text>
+            </TouchableOpacity>
           </View>
         }
       />
@@ -96,49 +102,44 @@ export default function BookDetailScreen({ navigation, route }: BookDetailScreen
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#f5f7fa' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  listContent: { paddingVertical: 8, paddingBottom: 24 },
-  emptyContainer: { flex: 1 },
-  empty: {
-    marginTop: 80,
-    alignItems: 'center',
-    paddingHorizontal: 40,
-  },
-  emptyIcon: { fontSize: 56, marginBottom: 12 },
-  emptyTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#1a1a2e',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    fontSize: 14,
-    color: '#888',
-    textAlign: 'center',
-    lineHeight: 20,
-  },
-  sectionHeader: {
-    backgroundColor: '#f0f2f5',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+  headerBtn: { marginRight: 4, backgroundColor: 'rgba(255,255,255,0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
+  headerBtnText: { color: '#fff', fontSize: 13, fontWeight: '700' },
+  summaryBar: {
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    borderBottomColor: '#f0f0f5',
+  },
+  summaryText: { fontSize: 13, color: '#9aa5b4', fontWeight: '500' },
+  list: { paddingTop: 8, paddingBottom: 30 },
+  emptyWrap: { flex: 1 },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
     marginTop: 8,
+    gap: 8,
   },
-  sectionTitle: {
-    fontSize: 14,
+  sectionDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: '#4361ee' },
+  sectionTitle: { flex: 1, fontSize: 13, fontWeight: '700', color: '#4a5568', textTransform: 'uppercase', letterSpacing: 0.6 },
+  sectionCount: {
+    fontSize: 12,
     fontWeight: '700',
-    color: '#555',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    color: '#4361ee',
+    backgroundColor: '#eef1fb',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
   },
-  headerBtn: {
-    marginRight: 4,
-  },
-  headerBtnText: {
-    color: '#ffffff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
+  empty: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 40, marginTop: 60 },
+  emptyIcon: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#eef1fb', justifyContent: 'center', alignItems: 'center', marginBottom: 20 },
+  emptyEmoji: { fontSize: 40 },
+  emptyTitle: { fontSize: 20, fontWeight: '700', color: '#0d1b2a', marginBottom: 8 },
+  emptySub: { fontSize: 14, color: '#9aa5b4', textAlign: 'center', lineHeight: 21, marginBottom: 24 },
+  emptyBtn: { backgroundColor: '#4361ee', borderRadius: 14, paddingHorizontal: 24, paddingVertical: 13 },
+  emptyBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
 });
